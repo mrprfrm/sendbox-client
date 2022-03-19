@@ -1,0 +1,14 @@
+@import "typography";
+
+$white: #FFFFFF;
+$gray-50: #F8F8F8;
+$gray-100: #F0F0F0;
+$gray-300: #B8B8B8;
+$gray-900: #101010;
+
+$shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+$shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+$inner-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);;
+
+$text-sm: 0.875rem/1.25rem "Open Sans";
+$text-base: 1rem/1.5rem "Open Sans";
