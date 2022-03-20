@@ -2,11 +2,14 @@
 import { mapState } from 'vuex';
 import ResizableTextarea from './components/ResizableTextarea.vue';
 import { SendIcon } from './icons';
-
-const TIME_OFFSET = new Date().getTimezoneOffset() * 60 * 1000;
+import { connectToBrocker } from './utils';
+import { TIME_OFFSET, BROKER_URL } from './config';
 
 export default {
   name: 'App',
+  data: () => ({
+    messageText: '',
+  }),
   components: { ResizableTextarea, SendIcon },
   computed: {
     ...mapState(['messages']),
@@ -19,6 +22,17 @@ export default {
       const publicationMinutes = `0${localPublicatedTime.getMinutes()}`.slice(-2);
       return `${publicationHours}:${publicationMinutes}`;
     },
+    submitMessage(event) {
+      event.preventDefault();
+      if (this.messageText.trim()) {
+        this.$store.dispatch('SEND_MESSAGE', this.messageText);
+        this.messageText = '';
+      }
+    },
+  },
+  mounted() {
+    this.$store.dispatch('GET_LAST_MESSAGES');
+    connectToBrocker(BROKER_URL, this.$store);
   },
 };
 </script>
@@ -33,8 +47,8 @@ export default {
        </small>
      </div>
    </div>
-   <form class="messenger-form">
-     <ResizableTextarea class="messenger-form__input"></ResizableTextarea>
+   <form @submit="submitMessage" class="messenger-form">
+     <ResizableTextarea v-model="messageText" class="messenger-form__input"></ResizableTextarea>
      <button class="messenger-form__button">
        <SendIcon></SendIcon>
      </button>
@@ -54,9 +68,9 @@ export default {
 
 .messages {
   display: flex;
-  flex-flow: column nowrap;
+  flex-flow: column-reverse nowrap;
   flex: 1 1 auto;
-  justify-content: flex-end;
+  overflow-y: scroll;
   padding: 1.5rem 1rem;
 
   &__item {
@@ -68,7 +82,7 @@ export default {
     margin: 0 0 0.75rem;
     border-radius: 0.5rem 0.5rem 0.5rem 0;
 
-    &:last-child {
+    &:first-child {
       margin: 0;
     }
 

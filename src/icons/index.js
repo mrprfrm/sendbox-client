@@ -1,4 +1,4 @@
+/* eslint-disable import/prefer-default-export */
 import SendIcon from './SendIcon.vue';
 
-/* eslint-disable */
 export { SendIcon };

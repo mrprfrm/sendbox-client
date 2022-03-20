@@ -1,0 +1,11 @@
+/* eslint-disable import/prefer-default-export */
+export function connectToBrocker(brokerUrl, store, delay = 1000) {
+  const ws = new WebSocket(brokerUrl);
+  ws.onmessage = (msg) => {
+    const data = JSON.parse(msg.data);
+    store.dispatch('RECEIVE_ACTION', data);
+  };
+  ws.onclose = () => {
+    setTimeout(connectToBrocker, brokerUrl, store, delay, delay * 1.5);
+  };
+}
