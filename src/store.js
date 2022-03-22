@@ -9,7 +9,7 @@ export default {
       state.messages.push(...messages);
     },
     PUSH_MESSAGE(state, message) {
-      state.messages.push(message);
+      state.messages.unshift(message);
     },
   },
   actions: {
