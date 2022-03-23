@@ -1,7 +1,7 @@
 <script>
 export default {
   name: 'ResizableTextarea',
-  props: ['modelValue'],
+  props: ['modelValue', 'submitHandler'],
   emits: ['update:modelValue'],
   methods: {
     resizeWithText() {
@@ -16,6 +16,8 @@ export default {
 <template>
   <textarea
     ref="input"
+    @keydown.ctrl.enter="submitHandler"
+    @keydown.meta.enter="submitHandler"
     @input="resizeWithText"
     :value="modelValue"
     rows="1"
