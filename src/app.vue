@@ -2,14 +2,17 @@
 import { mapState } from 'vuex';
 import ResizableTextarea from './components/ResizableTextarea.vue';
 import { SendIcon } from './icons';
-
-const TIME_OFFSET = new Date().getTimezoneOffset() * 60 * 1000;
+import { connectToBrocker } from './utils';
+import { TIME_OFFSET, BROKER_URL } from './config';
 
 export default {
   name: 'App',
+  data: () => ({
+    messageText: '',
+  }),
   components: { ResizableTextarea, SendIcon },
   computed: {
-    ...mapState(['messages']),
+    ...mapState(['messages', 'has_next']),
   },
   methods: {
     preetifyDate(dateStr) {
@@ -19,22 +22,46 @@ export default {
       const publicationMinutes = `0${localPublicatedTime.getMinutes()}`.slice(-2);
       return `${publicationHours}:${publicationMinutes}`;
     },
+    submitMessage(event) {
+      event.preventDefault();
+      if (this.messageText.trim()) {
+        this.$store.dispatch('SEND_MESSAGE', this.messageText);
+        this.messageText = '';
+      }
+    },
+  },
+  mounted() {
+    this.$store.dispatch('GET_LAST_MESSAGES');
+    connectToBrocker(BROKER_URL, this.$store);
   },
 };
 </script>
 
 <template>
  <div class="main">
-   <div class="messages">
-     <div :key="message.id" v-for="message in messages" class="messages__item">
-       <pre class="messages__item-text">{{ message.body }}</pre>
-       <small class="messages__item-date">
-         {{ preetifyDate(message.updatedAt || message.publicatedAt) }}
-       </small>
+   <div class="content">
+     <button
+         @click="$store.dispatch('GET_PREV_MESSAGES')"
+         v-show="has_next"
+         class="content__next-button"
+     >
+       Load more messages
+     </button>
+     <div class="messages">
+       <div :key="message.id" v-for="message in messages" class="messages__item">
+         <pre class="messages__item-text">{{ message.body }}</pre>
+         <small class="messages__item-date">
+           {{ preetifyDate(message.updatedAt || message.publicatedAt) }}
+         </small>
+       </div>
      </div>
    </div>
-   <form class="messenger-form">
-     <ResizableTextarea class="messenger-form__input"></ResizableTextarea>
+   <form @submit="submitMessage" class="messenger-form">
+     <ResizableTextarea
+         v-model="messageText"
+         :submit-handler="submitMessage"
+         class="messenger-form__input"
+     ></ResizableTextarea>
      <button class="messenger-form__button">
        <SendIcon></SendIcon>
      </button>
@@ -52,12 +79,30 @@ export default {
   background-image: url("./assets/background.svg");
 }
 
-.messages {
+.content {
   display: flex;
   flex-flow: column nowrap;
-  flex: 1 1 auto;
-  justify-content: flex-end;
+  overflow-y: scroll;
   padding: 1.5rem 1rem;
+
+  &__next-button {
+    display: flex;
+    padding: 0.5rem 0.75rem;
+    font: $text-sm;
+    color: $gray-500;
+    background: $white;
+    border: 1px solid $gray-100;
+    box-shadow: $shadow-sm;
+    border-radius: 0.375rem;
+    align-self: center;
+    margin: 0 0 1.5rem;
+  }
+}
+
+.messages {
+  display: flex;
+  flex: 1 1 auto;
+  flex-flow: column-reverse nowrap;
 
   &__item {
     display: flex;
@@ -65,16 +110,18 @@ export default {
     align-self: flex-start;
     padding: 1rem 0.75rem;
     background: $white;
-    margin: 0 0 0.75rem;
+    margin: 0 1rem 0.75rem 0;
     border-radius: 0.5rem 0.5rem 0.5rem 0;
 
-    &:last-child {
-      margin: 0;
+    &:first-child {
+      margin: 0 1rem 0 0;
     }
 
     &-text {
       font: $text-base;
       margin: 0 0 0.25rem;
+      white-space: pre-line;
+      word-break: break-word;
     }
 
     &-date {
@@ -112,10 +159,8 @@ export default {
   &__button {
     display: flex;
     padding: 0.5rem;
-    font: $text-sm;
     background: $white;
     border: 1px solid $gray-100;
-    font-weight: 600;
     box-shadow: $shadow-sm;
     border-radius: 0.375rem;
   }

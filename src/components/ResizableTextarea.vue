@@ -1,11 +1,13 @@
 <script>
 export default {
   name: 'ResizableTextarea',
+  props: ['modelValue', 'submitHandler'],
+  emits: ['update:modelValue'],
   methods: {
-    resize() {
+    resizeWithText() {
       const { input } = this.$refs;
-      const lineBreaks = input.value.split('\n').length;
-      input.rows = lineBreaks;
+      input.rows = input.value.split('\n').length;
+      this.$emit('update:modelValue', input.value);
     },
   },
 };
@@ -14,8 +16,10 @@ export default {
 <template>
   <textarea
     ref="input"
-    @input="resize"
-    :value="value"
+    @keydown.ctrl.enter="submitHandler"
+    @keydown.meta.enter="submitHandler"
+    @input="resizeWithText"
+    :value="modelValue"
     rows="1"
   />
 </template>
