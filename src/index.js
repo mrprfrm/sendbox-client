@@ -1,7 +1,7 @@
 import { createApp } from 'vue';
 import { createStore } from 'vuex';
 
-import App from './app.vue';
+import App from './views/app.vue';
 import store from './store';
 
 const app = createApp(App);

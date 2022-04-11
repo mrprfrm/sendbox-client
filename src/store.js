@@ -4,6 +4,8 @@ export default {
   state: () => ({
     messages: [],
     has_next: false,
+    selectedMessageId: null,
+    selectedMessageCoords: { top: 0, bottom: 0 },
     count: 0,
   }),
   mutations: {
@@ -20,6 +22,19 @@ export default {
     PUSH_MESSAGE(state, message) {
       state.count += 1;
       state.messages.unshift(message);
+    },
+    REMOVE_MESSAGE(state, messageId) {
+      const removeIndex = state.messages.findIndex(
+        (itm) => itm.id === messageId,
+      );
+      state.messages.splice(removeIndex, 1);
+    },
+    SELECT_MESSAGE(state, { id, top, bottom }) {
+      state.selectedMessageId = id;
+      state.selectedMessageCoords = { top, bottom };
+    },
+    DESELECT(state) {
+      state.selectedMessageId = null;
     },
   },
   actions: {
@@ -44,8 +59,36 @@ export default {
         body: JSON.stringify({ body: text }),
       });
     },
+    DELETE_SELECTED_MESSAGE({ commit, state }) {
+      fetch(`${API_URL}/${state.selectedMessageId}`, {
+        method: 'DELETE',
+      }).then(
+        commit('DESELECT'),
+      );
+    },
     RECEIVE_ACTION({ commit }, action) {
-      commit('PUSH_MESSAGE', action.message);
+      switch (action.action_type) {
+        case 1:
+          commit('PUSH_MESSAGE', action.message);
+          break;
+        case 2:
+          commit('REMOVE_MESSAGE', action.message.id);
+          break;
+        default:
+          console.warn('Unexpected action');
+          console.warn(action);
+      }
+    },
+    TOGGLE_SELECTION({ commit, state }, payload) {
+      const { id } = payload;
+      if (state.selectedMessageId !== id) {
+        commit('SELECT_MESSAGE', payload);
+      } else {
+        commit('DESELECT');
+      }
+    },
+    DESELECT({ commit }) {
+      commit('DESELECT');
     },
   },
 };
