@@ -25,7 +25,10 @@ export default {
   <div class="menu-wrapper">
     <div class="fade" @click="deselect"></div>
     <div class="menu" :style="this.menuCoordinates">
-      <button class="menu__option">Edit</button>
+      <button
+          @click="$store.dispatch('SET_EDITED_MESSAGE')"
+          class="menu__option"
+      >Edit</button>
       <button
           @click="$store.dispatch('DELETE_SELECTED_MESSAGE')"
           class="menu__option"

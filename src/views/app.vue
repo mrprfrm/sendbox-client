@@ -1,18 +1,25 @@
 <script>
 import { mapState } from 'vuex';
-import { ResizableTextarea, ContextMenu } from '../components';
+import { ResizableTextarea, ContextMenu, EditMessagePanel } from '../components';
 import { SendIcon } from '../icons';
 import { connectToBrocker } from '../utils';
 import { TIME_OFFSET, BROKER_URL } from '../config';
 
 export default {
   name: 'App',
-  data: () => ({
-    messageText: '',
-  }),
-  components: { ResizableTextarea, ContextMenu, SendIcon },
+  components: {
+    ResizableTextarea, ContextMenu, SendIcon, EditMessagePanel,
+  },
   computed: {
-    ...mapState(['messages', 'has_next', 'selectedMessageId', 'containerHeight']),
+    ...mapState(['messages', 'hasNext', 'selectedMessageId', 'containerHeight', 'relatedMessageId', 'isEditing']),
+    messageText: {
+      get() {
+        return this.$store.state.messageText;
+      },
+      set(value) {
+        this.$store.dispatch('SET_MESSAGE_TEXT', value);
+      },
+    },
   },
   methods: {
     selectMessage(event, id) {
@@ -28,24 +35,13 @@ export default {
     },
     submitMessage(event) {
       event.preventDefault();
-      if (this.messageText.trim()) {
-        this.$store.dispatch('SEND_MESSAGE', this.messageText.trim());
-        this.messageText = '';
-      }
+      this.$store.dispatch('SEND_MESSAGE');
     },
   },
   mounted() {
     this.$store.dispatch('GET_LAST_MESSAGES');
     connectToBrocker(BROKER_URL, this.$store);
   },
-  // updated() {
-  //   const container = this.$refs.messagesContainer;
-  //   const containerCoords = container.getBoundingClientRect();
-  //   // container.scrollTo({ top: container.scrollHeight });
-  //   if (this.containerHeight !== containerCoords.height) {
-  //     this.$store.dispatch('CONTAINER_RESIZE', containerCoords.height);
-  //   }
-  // },
 };
 </script>
 
@@ -58,7 +54,7 @@ export default {
    >
      <button
          @click="$store.dispatch('GET_PREV_MESSAGES')"
-         v-show="has_next"
+         v-show="hasNext"
          class="content__next-button"
      >
        Load more messages
@@ -79,16 +75,21 @@ export default {
        <ContextMenu v-show="selectedMessageId !== null"></ContextMenu>
      </div>
    </div>
-   <form @submit="submitMessage" class="messenger-form">
-     <ResizableTextarea
-         v-model="messageText"
-         :submit-handler="submitMessage"
-         class="messenger-form__input"
-     ></ResizableTextarea>
-     <button class="messenger-form__button">
-       <SendIcon></SendIcon>
-     </button>
-   </form>
+   <div class="controls">
+     <div v-show="relatedMessageId" class="related-message">
+       <EditMessagePanel v-show="isEditing"></EditMessagePanel>
+     </div>
+     <form @submit="submitMessage" class="messenger-form">
+       <ResizableTextarea
+           v-model="messageText"
+           :submit-handler="submitMessage"
+           class="messenger-form__input"
+       ></ResizableTextarea>
+       <button class="messenger-form__submit">
+         <SendIcon></SendIcon>
+       </button>
+     </form>
+   </div>
  </div>
 </template>
 
@@ -167,15 +168,24 @@ export default {
   }
 }
 
-.messenger-form {
+.controls {
   display: flex;
-  flex-flow: row nowrap;
-  align-items: flex-start;
+  flex-direction: column;
   background-color: $white;
   border-radius: 0.75rem 0.75rem  0 0;
   margin: 0;
   padding: 1.5rem 1rem 3rem;
   box-shadow: $shadow;
+}
+
+.related-message {
+  margin: 0 0 1rem 0;
+}
+
+.messenger-form {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: flex-start;
 
   &__input {
     display: flex;
@@ -188,16 +198,17 @@ export default {
     outline: none;
     box-shadow: $inner-shadow;
     max-height: 8rem;
-    margin: 0 0.5rem 0;
+    margin: 0 0.5rem 0 0;
   }
 
-  &__button {
+  &__submit {
     display: flex;
     padding: 0.5rem;
     background: $white;
     border: 1px solid $gray-100;
     box-shadow: $shadow-sm;
     border-radius: 0.375rem;
+    cursor: pointer;
   }
 }
 </style>
