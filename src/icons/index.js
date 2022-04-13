@@ -1,4 +1,4 @@
 /* eslint-disable import/prefer-default-export */
-import SendIcon from './SendIcon.vue';
-
-export { SendIcon };
+export { default as SendIcon } from './SendIcon.vue';
+export { default as EditIcon } from './EditIcon.vue';
+export { default as XCircleIcon } from './XCircleIcon.vue';

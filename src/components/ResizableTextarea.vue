@@ -9,6 +9,11 @@ export default {
       input.rows = input.value.split('\n').length;
       this.$emit('update:modelValue', input.value);
     },
+    localSubmitHandler(event) {
+      this.submitHandler(event);
+      const { input } = this.$refs;
+      input.rows = 1;
+    },
   },
 };
 </script>
@@ -16,8 +21,8 @@ export default {
 <template>
   <textarea
     ref="input"
-    @keydown.ctrl.enter="submitHandler"
-    @keydown.meta.enter="submitHandler"
+    @keydown.ctrl.enter="localSubmitHandler"
+    @keydown.meta.enter="localSubmitHandler"
     @input="resizeWithText"
     :value="modelValue"
     rows="1"

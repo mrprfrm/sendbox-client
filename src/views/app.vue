@@ -1,20 +1,31 @@
 <script>
 import { mapState } from 'vuex';
-import ResizableTextarea from './components/ResizableTextarea.vue';
-import { SendIcon } from './icons';
-import { connectToBrocker } from './utils';
-import { TIME_OFFSET, BROKER_URL } from './config';
+import { ResizableTextarea, ContextMenu, EditMessagePanel } from '../components';
+import { SendIcon } from '../icons';
+import { connectToBrocker } from '../utils';
+import { TIME_OFFSET, BROKER_URL } from '../config';
 
 export default {
   name: 'App',
-  data: () => ({
-    messageText: '',
-  }),
-  components: { ResizableTextarea, SendIcon },
+  components: {
+    ResizableTextarea, ContextMenu, SendIcon, EditMessagePanel,
+  },
   computed: {
-    ...mapState(['messages', 'has_next']),
+    ...mapState(['messages', 'hasNext', 'selectedMessageId', 'containerHeight', 'relatedMessageId', 'isEditing']),
+    messageText: {
+      get() {
+        return this.$store.state.messageText;
+      },
+      set(value) {
+        this.$store.dispatch('SET_MESSAGE_TEXT', value);
+      },
+    },
   },
   methods: {
+    selectMessage(event, id) {
+      const { top, bottom } = event.currentTarget.getBoundingClientRect();
+      this.$store.dispatch('TOGGLE_SELECTION', { id, top, bottom });
+    },
     preetifyDate(dateStr) {
       const publicatedTime = new Date(dateStr).getTime();
       const localPublicatedTime = new Date(publicatedTime - TIME_OFFSET);
@@ -24,10 +35,7 @@ export default {
     },
     submitMessage(event) {
       event.preventDefault();
-      if (this.messageText.trim()) {
-        this.$store.dispatch('SEND_MESSAGE', this.messageText);
-        this.messageText = '';
-      }
+      this.$store.dispatch('SEND_MESSAGE');
     },
   },
   mounted() {
@@ -39,51 +47,73 @@ export default {
 
 <template>
  <div class="main">
-   <div class="content">
+   <div
+       ref="messagesContainer"
+       class="content"
+       v-bind:class="{content_fixed: this.selectedMessageId !== null}"
+   >
      <button
          @click="$store.dispatch('GET_PREV_MESSAGES')"
-         v-show="has_next"
+         v-show="hasNext"
          class="content__next-button"
      >
        Load more messages
      </button>
      <div class="messages">
-       <div :key="message.id" v-for="message in messages" class="messages__item">
+       <div
+           :key="message.id"
+           @click="selectMessage($event, message.id)"
+           v-for="message in messages"
+           class="messages__item"
+           v-bind:class="{messages__item_selected: this.selectedMessageId === message.id}"
+       >
          <pre class="messages__item-text">{{ message.body }}</pre>
          <small class="messages__item-date">
            {{ preetifyDate(message.updatedAt || message.publicatedAt) }}
          </small>
        </div>
+       <ContextMenu v-show="selectedMessageId !== null"></ContextMenu>
      </div>
    </div>
-   <form @submit="submitMessage" class="messenger-form">
-     <ResizableTextarea
-         v-model="messageText"
-         :submit-handler="submitMessage"
-         class="messenger-form__input"
-     ></ResizableTextarea>
-     <button class="messenger-form__button">
-       <SendIcon></SendIcon>
-     </button>
-   </form>
+   <div class="controls">
+     <div v-show="relatedMessageId" class="related-message">
+       <EditMessagePanel v-show="isEditing"></EditMessagePanel>
+     </div>
+     <form @submit="submitMessage" class="messenger-form">
+       <ResizableTextarea
+           v-model="messageText"
+           :submit-handler="submitMessage"
+           class="messenger-form__input"
+       ></ResizableTextarea>
+       <button class="messenger-form__submit">
+         <SendIcon></SendIcon>
+       </button>
+     </form>
+   </div>
  </div>
 </template>
 
 <style lang="scss">
-@import "./styles/variables";
+@import "../styles/variables";
 
 .main {
   display: flex;
   flex: 1 1 auto;
   flex-flow: column nowrap;
-  background-image: url("./assets/background.svg");
+  background-image: url("../assets/background.svg");
 }
 
 .content {
   display: flex;
+  flex: 1 1 100%;
   flex-flow: column nowrap;
   overflow-y: scroll;
   padding: 1.5rem 1rem;
+  scroll-behavior: smooth;
+
+  &_fixed {
+    overflow-y: hidden;
+  }
 
   &__next-button {
     display: flex;
@@ -112,9 +142,15 @@ export default {
     background: $white;
     margin: 0 1rem 0.75rem 0;
     border-radius: 0.5rem 0.5rem 0.5rem 0;
+    cursor: pointer;
+    user-select: none;
 
     &:first-child {
       margin: 0 1rem 0 0;
+    }
+
+    &_selected {
+      z-index: 10;
     }
 
     &-text {
@@ -132,15 +168,24 @@ export default {
   }
 }
 
-.messenger-form {
+.controls {
   display: flex;
-  flex-flow: row nowrap;
-  align-items: flex-start;
+  flex-direction: column;
   background-color: $white;
   border-radius: 0.75rem 0.75rem  0 0;
   margin: 0;
   padding: 1.5rem 1rem 3rem;
   box-shadow: $shadow;
+}
+
+.related-message {
+  margin: 0 0 1rem 0;
+}
+
+.messenger-form {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: flex-start;
 
   &__input {
     display: flex;
@@ -153,16 +198,17 @@ export default {
     outline: none;
     box-shadow: $inner-shadow;
     max-height: 8rem;
-    margin: 0 0.5rem 0;
+    margin: 0 0.5rem 0 0;
   }
 
-  &__button {
+  &__submit {
     display: flex;
     padding: 0.5rem;
     background: $white;
     border: 1px solid $gray-100;
     box-shadow: $shadow-sm;
     border-radius: 0.375rem;
+    cursor: pointer;
   }
 }
 </style>
