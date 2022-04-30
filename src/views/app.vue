@@ -67,6 +67,7 @@ export default {
            class="messages__item"
            v-bind:class="{messages__item_selected: this.selectedMessageId === message.id}"
        >
+         <small class="messages__item-username">{{ message.user.username }}</small>
          <pre class="messages__item-text">{{ message.body }}</pre>
          <small class="messages__item-date">
            {{ preetifyDate(message.updatedAt || message.publicatedAt) }}
@@ -84,9 +85,10 @@ export default {
            v-model="messageText"
            :submit-handler="submitMessage"
            class="messenger-form__input"
+           placeholder="Enter text"
        ></ResizableTextarea>
        <button class="messenger-form__submit">
-         <SendIcon></SendIcon>
+         <SendIcon class="message-form__submit-icon"></SendIcon>
        </button>
      </form>
    </div>
@@ -162,8 +164,15 @@ export default {
 
     &-date {
       font: $text-sm;
-      color: $gray-300;
+      color: $gray-400;
       text-align: right;
+    }
+
+    &-username {
+      font: $text-sm;
+      margin: 0 0 0.25rem;
+      color: $brand-alter-dark;
+      font-weight: 600;
     }
   }
 }
@@ -174,7 +183,7 @@ export default {
   background-color: $white;
   border-radius: 0.75rem 0.75rem  0 0;
   margin: 0;
-  padding: 1.5rem 1rem 3rem;
+  padding: 1rem 1rem 3rem;
   box-shadow: $shadow;
 }
 
@@ -186,6 +195,7 @@ export default {
   display: flex;
   flex-flow: row nowrap;
   align-items: flex-start;
+  margin: 0;
 
   &__input {
     display: flex;
@@ -199,6 +209,10 @@ export default {
     box-shadow: $inner-shadow;
     max-height: 8rem;
     margin: 0 0.5rem 0 0;
+
+    &::placeholder {
+      color: $gray-300;
+    }
   }
 
   &__submit {
