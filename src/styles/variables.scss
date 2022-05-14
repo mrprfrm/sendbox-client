@@ -6,8 +6,13 @@ $gray-100: #F0F0F0;
 $gray-300: #B8B8B8;
 $gray-400: #989898;
 $gray-500: #787878;
+$gray-700: #404040;
+$gray-800: #2F2F2F;
 $gray-900: #101010;
+$brand: #4BD2E4;
+$brand-alter: #DE47B4;
 $brand-alter-dark: #6C2258;
+$main-gradient: linear-gradient(90deg, $brand-alter 0%, $brand 100%);
 
 $shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 $shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
@@ -15,3 +20,4 @@ $inner-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);;
 
 $text-sm: 0.875rem/1.25rem "Open Sans";
 $text-base: 1rem/1.5rem "Open Sans";
+$text-2xl: 1.5rem/2rem "Open Sans";

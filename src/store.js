@@ -1,6 +1,9 @@
-import { API_URL } from './config';
+import { createStore } from 'vuex';
+import { API_URL, AUTH_URL } from './config';
 
-export default {
+import router from './router';
+
+export default createStore({
   state: () => ({
     messages: [],
     hasNext: false,
@@ -10,21 +13,30 @@ export default {
     selectedMessageId: null,
     selectedMessageCoords: { top: 0, bottom: 0 },
     count: 0,
-  }),
-  mutations: {
-    SET_LAST_MESSAGES(state, data) {
-      state.hasNext = data.hasNext;
-      state.count = data.messages.length;
-      state.messages.push(...data.messages);
+    username: '',
+    password: '',
+    accessToken: '',
+    user: {
+      username: '',
     },
-    PUSH_MESSAGES(state, data) {
-      state.hasNext = data.hasNext;
-      state.count += data.messages.length;
-      state.messages.push(...data.messages);
+  }),
+  /* eslint no-param-reassign: "error" */
+  mutations: {
+    RESET_HAS_NEXT(state, hasNext = false) {
+      state.hasNext = hasNext;
+    },
+    RESET_COUNT(state, count = 0) {
+      state.count = count;
+    },
+    RESET_MESSAGES(state, messages = []) {
+      state.messages = messages;
+    },
+    PUSH_MESSAGES(state, messages) {
+      state.messages.push(...messages);
     },
     PUSH_MESSAGE(state, message) {
-      state.count += 1;
       state.messages.unshift(message);
+      state.count += 1;
     },
     UPDATE_MESSAGE(state, message) {
       const updatedIndex = state.messages.findIndex(
@@ -37,6 +49,7 @@ export default {
         (itm) => itm.id === messageId,
       );
       state.messages.splice(removeIndex, 1);
+      state.count -= 1;
     },
     SELECT_MESSAGE(state, { id, top, bottom }) {
       state.selectedMessageId = id;
@@ -54,13 +67,30 @@ export default {
     DESELECT(state) {
       state.selectedMessageId = null;
     },
+    SET_USERNAME(state, username) {
+      state.username = username;
+    },
+    SET_PASSWORD(state, password) {
+      state.password = password;
+    },
+    SET_TOKEN(state, token) {
+      state.accessToken = token;
+    },
+    SET_USER(state, user) {
+      state.user = user;
+    },
   },
+  /* eslint-enable */
   actions: {
     GET_LAST_MESSAGES({ commit }) {
       fetch(API_URL).then((response) => (
         response.json()
       )).then((data) => {
-        commit('SET_LAST_MESSAGES', data);
+        commit('RESET_MESSAGES', data.messages);
+        commit('RESET_HAS_NEXT', data.hasNext);
+        commit('RESET_COUNT', data.count);
+      }).catch(() => {
+        // TODO refresh token is 401 and retry
       });
     },
     GET_PREV_MESSAGES({ commit, state }) {
@@ -68,6 +98,8 @@ export default {
         response.json()
       )).then((data) => {
         commit('PUSH_MESSAGES', data);
+      }).catch(() => {
+        // TODO refresh token is 401 and retry
       });
     },
     SEND_MESSAGE({ commit, state }) {
@@ -86,7 +118,9 @@ export default {
           commit('SET_RELATED_MESSAGE', null),
           commit('SET_MESSAGE_TEXT', ''),
           commit('SET_EDITING', false),
-        );
+        ).catch(() => {
+          // TODO refresh token is 401 and retry
+        });
       }
     },
     DELETE_SELECTED_MESSAGE({ commit, state }) {
@@ -112,9 +146,6 @@ export default {
           console.warn(action);
       }
     },
-    SET_MESSAGE_TEXT({ commit }, text) {
-      commit('SET_MESSAGE_TEXT', text);
-    },
     SET_EDITED_MESSAGE({ commit, state, getters }) {
       commit('SET_RELATED_MESSAGE', state.selectedMessageId);
       commit('SET_MESSAGE_TEXT', getters.relatedMessage.body);
@@ -138,8 +169,57 @@ export default {
         commit('DESELECT');
       }
     },
-    DESELECT({ commit }) {
-      commit('DESELECT');
+    SIGH_IN({ commit, state }) {
+      fetch(`${AUTH_URL}/signin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: state.username,
+          password: state.password,
+        }),
+      }).then((response) => (
+        response.json()
+      )).then((data) => {
+        commit('SET_USER', data.user);
+        commit('SET_TOKEN', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        router.push({ name: 'room' });
+      }).catch(() => {
+        // TODO set error message.
+      });
+    },
+    SIGN_UP({ commit, state }) {
+      fetch(`${AUTH_URL}/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: state.username,
+          password: state.password,
+        }),
+      }).then((response) => (
+        response.json()
+      )).then((data) => {
+        commit('SET_USER', data.user);
+        commit('SET_TOKEN', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        router.push({ name: 'room' });
+      }).catch(() => {
+        // TODO set error message.
+      });
+    },
+    REFRESH({ commit }) {
+      const token = localStorage.getItem('refreshToken');
+      fetch(`${AUTH_URL}/refresh`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((response) => (
+        response.json()
+      )).then((data) => {
+        commit('SET_USER', data.user);
+        commit('SET_TOKEN', data.accessToken);
+      }).catch(() => {
+        localStorage.removeItem('refreshToken');
+      });
     },
   },
   getters: {
@@ -150,4 +230,4 @@ export default {
       return state.messages[relatedIndex];
     },
   },
-};
+});

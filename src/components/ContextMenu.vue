@@ -1,36 +1,39 @@
 <script>
-import { mapState } from 'vuex';
+import { useStore } from 'vuex';
+import { computed } from 'vue';
 
 export default {
-  name: 'ContextMenu',
-  computed: {
-    ...mapState(['selectedMessageCoords', 'selectedMessageId']),
-    menuCoordinates() {
-      const { top, bottom } = this.selectedMessageCoords;
-      if (window.innerHeight / 1.5 > bottom) {
-        return { top: bottom + 8 };
-      }
-      return { bottom: window.innerHeight - top + 8 };
-    },
-  },
-  methods: {
-    deselect() {
-      this.$store.dispatch('DESELECT');
-    },
+  setup() {
+    const store = useStore();
+
+    return {
+      menuCoordinates: computed(() => {
+        const { top, bottom } = store.state.selectedMessageCoords;
+        if (window.innerHeight / 1.5 > bottom) {
+          return { top: bottom + 8 };
+        }
+        return { bottom: window.innerHeight - top + 8 };
+      }),
+      setEdited: () => store.dispatch('SET_EDITED_MESSAGE'),
+      deselectMessage: () => store.commit('DESELECT'),
+      deleteMessage: () => store.dispatch('DELETE_SELECTED_MESSAGE'),
+    };
   },
 };
 </script>
 
 <template>
   <div class="menu-wrapper">
-    <div class="fade" @click="deselect"></div>
-    <div class="menu" :style="this.menuCoordinates">
+    <!-- eslint-disable vuejs-accessibility/click-events-have-key-events -->
+    <div class="fade" @click="deselectMessage"></div>
+    <!-- eslint-enable -->
+    <div class="menu" :style="menuCoordinates">
       <button
-          @click="$store.dispatch('SET_EDITED_MESSAGE')"
+          @click="setEdited"
           class="menu__option"
       >Edit</button>
       <button
-          @click="$store.dispatch('DELETE_SELECTED_MESSAGE')"
+          @click="deleteMessage"
           class="menu__option"
       >Delete</button>
     </div>
@@ -75,6 +78,7 @@ export default {
     font: $text-sm;
     border: none;
     text-align: left;
+    color: $gray-700;
   }
 }
 </style>

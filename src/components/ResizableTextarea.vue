@@ -19,6 +19,7 @@ export default {
 </script>
 
 <template>
+  <!-- eslint-disable vuejs-accessibility/form-control-has-label -->
   <textarea
     ref="input"
     @keydown.ctrl.enter="localSubmitHandler"
@@ -27,4 +28,5 @@ export default {
     :value="modelValue"
     rows="1"
   />
+  <!-- eslint-enable -->
 </template>
