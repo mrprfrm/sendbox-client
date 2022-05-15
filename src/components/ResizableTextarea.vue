@@ -5,6 +5,7 @@ export default {
   emits: ['update:modelValue'],
   methods: {
     resizeWithText() {
+      // TODO resize textaria based on inner text scroll
       const { input } = this.$refs;
       input.rows = input.value.split('\n').length;
       this.$emit('update:modelValue', input.value);

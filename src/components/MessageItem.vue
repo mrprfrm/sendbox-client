@@ -24,7 +24,7 @@ export default {
         const publicationHours = `0${localPublicatedTime.getHours()}`.slice(-2);
         const publicationMinutes = `0${localPublicatedTime.getMinutes()}`.slice(-2);
         return `${publicationHours}:${publicationMinutes}`;
-      })
+      }),
     };
   },
 };
