@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import { MessageItem } from '@/components';
 
 import store from '@/store';
@@ -15,38 +15,31 @@ function factory() {
     updatedAt: null,
   };
 
-  return mount(MessageItem, {
+  return shallowMount(MessageItem, {
     props: { message },
     global: { plugins: [store] },
   });
 }
 
 describe('MessageItem.vue', () => {
-
   it('check message text', () => {
-    const wrapper = factory()
-    expect(wrapper.html()).toContain('Hi Admin! How are you doing?');
+    const wrapper = factory();
+    expect(wrapper.find('.message__text').text()).toBe('Hi Admin! How are you doing?');
   });
 
   it('check message date', () => {
     // TODO mock TIME_OFFSET
     const wrapper = factory();
-    expect(wrapper.html()).toContain('14:16');
+    expect(wrapper.find('.message__date').text()).toBe('14:16');
   });
 
   it('check publisher username', () => {
-    const wrapper = mount(MessageItem, {
-      props: { message },
-      global: { plugins: [store] },
-    });
+    const wrapper = factory();
     expect(wrapper.html()).toContain('Mock');
   });
 
   xit('check current user message', () => {
-    const wrapper = mount(MessageItem, {
-      props: { message },
-      global: { plugins: [store] },
-    });
-    expect(wrapper.html()).not.toContain('Mock');
+    const wrapper = factory();
+    expect(wrapper.find('.message__username').text()).not.toBe('Mock');
   });
 });
