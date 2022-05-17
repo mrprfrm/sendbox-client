@@ -1,7 +1,8 @@
 <script>
-import { computed, onMounted, onBeforeMount } from 'vue';
+import { computed, onMounted } from 'vue';
+// import { computed, onMounted, onBeforeMount } from 'vue';
 import { useStore } from 'vuex';
-import { useRouter } from 'vue-router';
+// import { useRouter } from 'vue-router';
 import {
   ResizableTextarea, ContextMenu, EditMessagePanel, MessageItem,
 } from '@/components';
@@ -16,11 +17,11 @@ export default {
 
   setup() {
     const store = useStore();
-    const router = useRouter();
+    // const router = useRouter();
 
     const messageText = computed({
       get() {
-        return store.state.messageText;
+        return store.state.messages.messageText;
       },
       set(value) {
         store.commit('SET_MESSAGE_TEXT', value);
@@ -32,26 +33,31 @@ export default {
       connectToBrocker(BROKER_URL, store);
     });
 
-    onBeforeMount(() => {
-      if (!store.state.accessToken) {
-        router.push({ name: 'placeholder' });
-      }
-    });
+    // TODO push if not authenticated
+    // or do nothing and let store to resolve case
+    // if 401 or 403 was received
+    // onBeforeMount(() => {
+    //   if (!store.state.accessToken) {
+    //     router.push({ name: 'placeholder' });
+    //   }
+    // });
 
-    function submitMessage(event) {
+    const submitMessage = (event) => {
       event.preventDefault();
       store.dispatch('SEND_MESSAGE');
-    }
+    };
+
+    const getPrevMessages = () => store.dispatch('GET_PREV_MESSAGES');
 
     return {
       messageText,
       submitMessage,
-      messages: computed(() => store.state.messages),
-      hasNext: computed(() => store.state.hasNext),
-      selectedMessageId: computed(() => store.state.selectedMessageId),
-      relatedMessageId: computed(() => store.state.relatedMessageId),
-      isEditing: computed(() => store.state.isEditing),
-      user: computed(() => store.state.user),
+      getPrevMessages,
+      messages: computed(() => store.state.messages.messages),
+      hasNext: computed(() => store.state.messages.hasNext),
+      selectedMessageId: computed(() => store.state.messages.selectedMessageId),
+      editedMessageId: computed(() => store.state.messages.editedMessageId),
+      user: computed(() => store.state.auth.user),
     };
   },
 };
@@ -61,7 +67,7 @@ export default {
  <div class="room">
    <div class="header-wrapper">
      <div class="header">
-       <span class="header__title">{{ user.username }}</span>
+       <span class="header__title">{{ user ? user.username : 'Anon' }}</span>
        <button class="header__usermenu-btn">
          <UserIcon></UserIcon>
        </button>
@@ -73,9 +79,9 @@ export default {
        v-bind:class="{content_fixed: this.selectedMessageId !== null}"
    >
      <button
-         @click="$store.dispatch('GET_PREV_MESSAGES')"
          v-show="hasNext"
          class="content__next-button"
+         @click="getPrevMessages"
      >
        Load more messages
      </button>
@@ -85,8 +91,8 @@ export default {
      </div>
    </div>
    <div class="controls">
-     <div v-show="relatedMessageId" class="related-message">
-       <EditMessagePanel v-show="isEditing"></EditMessagePanel>
+     <div v-show="editedMessageId" class="related-message">
+       <EditMessagePanel></EditMessagePanel>
      </div>
      <form @submit="submitMessage" class="messenger-form">
        <ResizableTextarea
